@@ -14,7 +14,12 @@ import androidx.compose.ui.unit.dp
 import com.parentpressure.app.network.UserDto
 
 @Composable
-fun HomeScreen(user: UserDto, onViewWorkouts: () -> Unit, onLogout: () -> Unit) {
+fun HomeScreen(
+    user: UserDto,
+    onViewWorkouts: () -> Unit,
+    onViewNutrition: () -> Unit,
+    onLogout: () -> Unit,
+) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -25,6 +30,10 @@ fun HomeScreen(user: UserDto, onViewWorkouts: () -> Unit, onLogout: () -> Unit) 
 
         Button(onClick = onViewWorkouts, modifier = Modifier.padding(top = 24.dp)) {
             Text("View Workouts")
+        }
+
+        Button(onClick = onViewNutrition, modifier = Modifier.padding(top = 12.dp)) {
+            Text("Log Nutrition")
         }
 
         Button(onClick = onLogout, modifier = Modifier.padding(top = 12.dp)) {

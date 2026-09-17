@@ -27,4 +27,5 @@ object ApiClient {
 
     val authApi: AuthApi = retrofit.create(AuthApi::class.java)
     val workoutsApi: WorkoutsApi = retrofit.create(WorkoutsApi::class.java)
+    val nutritionApi: NutritionApi = retrofit.create(NutritionApi::class.java)
 }

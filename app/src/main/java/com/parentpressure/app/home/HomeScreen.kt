@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.parentpressure.app.network.UserDto
 
 @Composable
-fun HomeScreen(user: UserDto, onLogout: () -> Unit) {
+fun HomeScreen(user: UserDto, onViewWorkouts: () -> Unit, onLogout: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -23,7 +23,11 @@ fun HomeScreen(user: UserDto, onLogout: () -> Unit) {
         Text("Welcome, ${user.firstName ?: user.email}!", style = MaterialTheme.typography.headlineMedium)
         Text("Subscription: ${user.subscriptionTier}", modifier = Modifier.padding(top = 8.dp))
 
-        Button(onClick = onLogout, modifier = Modifier.padding(top = 24.dp)) {
+        Button(onClick = onViewWorkouts, modifier = Modifier.padding(top = 24.dp)) {
+            Text("View Workouts")
+        }
+
+        Button(onClick = onLogout, modifier = Modifier.padding(top = 12.dp)) {
             Text("Log Out")
         }
     }

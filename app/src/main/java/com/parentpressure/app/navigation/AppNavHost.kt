@@ -14,6 +14,8 @@ import com.parentpressure.app.auth.RegisterScreen
 import com.parentpressure.app.home.HomeScreen
 import com.parentpressure.app.nutrition.NutritionScreen
 import com.parentpressure.app.nutrition.NutritionViewModel
+import com.parentpressure.app.subscription.SubscriptionScreen
+import com.parentpressure.app.subscription.SubscriptionViewModel
 import com.parentpressure.app.workouts.WorkoutsScreen
 import com.parentpressure.app.workouts.WorkoutsViewModel
 
@@ -23,6 +25,7 @@ private object Routes {
     const val HOME = "home"
     const val WORKOUTS = "workouts"
     const val NUTRITION = "nutrition"
+    const val SUBSCRIPTION = "subscription"
 }
 
 @Composable
@@ -63,6 +66,7 @@ fun AppNavHost() {
                     user = user,
                     onViewWorkouts = { navController.navigate(Routes.WORKOUTS) },
                     onViewNutrition = { navController.navigate(Routes.NUTRITION) },
+                    onViewSubscription = { navController.navigate(Routes.SUBSCRIPTION) },
                     onLogout = {
                         authViewModel.logout()
                         navController.navigate(Routes.LOGIN) {
@@ -81,6 +85,11 @@ fun AppNavHost() {
         composable(Routes.NUTRITION) {
             val nutritionViewModel: NutritionViewModel = viewModel()
             NutritionScreen(viewModel = nutritionViewModel)
+        }
+
+        composable(Routes.SUBSCRIPTION) {
+            val subscriptionViewModel: SubscriptionViewModel = viewModel()
+            SubscriptionScreen(viewModel = subscriptionViewModel)
         }
     }
 }

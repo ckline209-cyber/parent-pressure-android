@@ -18,6 +18,7 @@ fun HomeScreen(
     user: UserDto,
     onViewWorkouts: () -> Unit,
     onViewNutrition: () -> Unit,
+    onViewSubscription: () -> Unit,
     onLogout: () -> Unit,
 ) {
     Column(
@@ -34,6 +35,10 @@ fun HomeScreen(
 
         Button(onClick = onViewNutrition, modifier = Modifier.padding(top = 12.dp)) {
             Text("Log Nutrition")
+        }
+
+        Button(onClick = onViewSubscription, modifier = Modifier.padding(top = 12.dp)) {
+            Text("Subscription")
         }
 
         Button(onClick = onLogout, modifier = Modifier.padding(top = 12.dp)) {

@@ -41,4 +41,11 @@ interface WorkoutsApi {
         @Path("id") exerciseId: String,
         @Header("Authorization") authorization: String,
     ): Response<ProgressionSuggestionDto>
+
+    @POST("workouts/exercises/{id}/personalize")
+    suspend fun getPersonalizedProgression(
+        @Path("id") exerciseId: String,
+        @Body body: PersonalizeRequest,
+        @Header("Authorization") authorization: String,
+    ): Response<PersonalizeResponse>
 }

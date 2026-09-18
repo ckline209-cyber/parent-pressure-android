@@ -8,6 +8,8 @@ import com.parentpressure.app.network.ApiClient
 import com.parentpressure.app.network.ExerciseDto
 import com.parentpressure.app.network.ExerciseLogDto
 import com.parentpressure.app.network.LogExerciseRequest
+import com.parentpressure.app.network.PersonalizeRequest
+import com.parentpressure.app.network.PersonalizeResponse
 import com.parentpressure.app.network.ProgressionSuggestionDto
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +23,9 @@ data class ExerciseLogUiState(
     val exercises: List<ExerciseDto> = emptyList(),
     val logsByExercise: Map<String, List<ExerciseLogDto>> = emptyMap(),
     val progressionByExercise: Map<String, ProgressionSuggestionDto> = emptyMap(),
+    val personalizedByExercise: Map<String, PersonalizeResponse> = emptyMap(),
+    val aiLoadingExerciseId: String? = null,
+    val aiErrorByExercise: Map<String, String> = emptyMap(),
     val errorMessage: String? = null,
     val loggingExerciseId: String? = null,
     val logError: String? = null,
@@ -108,6 +113,47 @@ class ExerciseLogViewModel(application: Application) : AndroidViewModel(applicat
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(loggingExerciseId = null, logError = e.message ?: "Failed to log set")
+            }
+        }
+    }
+
+    fun requestAiCoaching(exerciseId: String, soreness: String?, notes: String?) {
+        val token = tokenStore.getToken() ?: return
+
+        _uiState.value = _uiState.value.copy(aiLoadingExerciseId = exerciseId)
+        viewModelScope.launch {
+            try {
+                val response = workoutsApi.getPersonalizedProgression(
+                    exerciseId,
+                    PersonalizeRequest(soreness, notes),
+                    "Bearer $token",
+                )
+                val body = response.body()
+                _uiState.value = when {
+                    response.code() == 403 -> _uiState.value.copy(
+                        aiLoadingExerciseId = null,
+                        aiErrorByExercise = _uiState.value.aiErrorByExercise +
+                            (exerciseId to "AI coaching requires a Premium subscription."),
+                    )
+
+                    response.isSuccessful && body != null -> _uiState.value.copy(
+                        aiLoadingExerciseId = null,
+                        personalizedByExercise = _uiState.value.personalizedByExercise + (exerciseId to body),
+                        aiErrorByExercise = _uiState.value.aiErrorByExercise - exerciseId,
+                    )
+
+                    else -> _uiState.value.copy(
+                        aiLoadingExerciseId = null,
+                        aiErrorByExercise = _uiState.value.aiErrorByExercise +
+                            (exerciseId to "Failed to get AI coaching (${response.code()})"),
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    aiLoadingExerciseId = null,
+                    aiErrorByExercise = _uiState.value.aiErrorByExercise +
+                        (exerciseId to (e.message ?: "Failed to get AI coaching")),
+                )
             }
         }
     }

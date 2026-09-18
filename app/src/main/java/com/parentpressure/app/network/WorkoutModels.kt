@@ -96,3 +96,22 @@ data class ProgressionSuggestionDto(
     @SerializedName("suggested_reps") val suggestedReps: Int?,
     val rationale: String,
 )
+
+data class PersonalizeRequest(
+    val soreness: String?,
+    val notes: String?,
+)
+
+data class PersonalizedSuggestionDto(
+    @SerializedName("suggested_weight_kg") val suggestedWeightKg: Double?,
+    @SerializedName("suggested_reps") val suggestedReps: Int?,
+    val adjusted: Boolean,
+    val rationale: String,
+)
+
+data class PersonalizeResponse(
+    @SerializedName("exercise_id") val exerciseId: String,
+    val base: ProgressionSuggestionDto,
+    val personalized: PersonalizedSuggestionDto?,
+    @SerializedName("ai_available") val aiAvailable: Boolean,
+)

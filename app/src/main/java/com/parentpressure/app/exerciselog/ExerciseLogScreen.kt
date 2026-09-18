@@ -14,7 +14,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,7 +33,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.parentpressure.app.network.ExerciseDto
 import com.parentpressure.app.network.ExerciseLogDto
+import com.parentpressure.app.network.PersonalizeResponse
 import com.parentpressure.app.network.ProgressionSuggestionDto
+
+private val SORENESS_OPTIONS = listOf("none", "mild", "significant")
 
 @Composable
 fun ExerciseLogScreen(userWorkoutId: String, viewModel: ExerciseLogViewModel) {
@@ -84,10 +89,16 @@ fun ExerciseLogScreen(userWorkoutId: String, viewModel: ExerciseLogViewModel) {
                         exercise = exercise,
                         logs = uiState.logsByExercise[exercise.id] ?: emptyList(),
                         progression = uiState.progressionByExercise[exercise.id],
+                        personalized = uiState.personalizedByExercise[exercise.id],
+                        isAiLoading = uiState.aiLoadingExerciseId == exercise.id,
+                        aiError = uiState.aiErrorByExercise[exercise.id],
                         isLogging = uiState.loggingExerciseId == exercise.id,
                         isCompleted = uiState.isCompleted,
                         onLogSet = { repsPerSet, weightKg, rpe ->
                             viewModel.logSet(exercise.id, repsPerSet, weightKg, rpe)
+                        },
+                        onAskAiCoach = { soreness, notes ->
+                            viewModel.requestAiCoaching(exercise.id, soreness, notes)
                         },
                     )
                 }
@@ -117,13 +128,18 @@ private fun ExerciseLogCard(
     exercise: ExerciseDto,
     logs: List<ExerciseLogDto>,
     progression: ProgressionSuggestionDto?,
+    personalized: PersonalizeResponse?,
+    isAiLoading: Boolean,
+    aiError: String?,
     isLogging: Boolean,
     isCompleted: Boolean,
     onLogSet: (repsPerSet: List<Int>, weightKg: Double?, rpe: Int?) -> Unit,
+    onAskAiCoach: (soreness: String?, notes: String?) -> Unit,
 ) {
     var reps by remember { mutableStateOf("") }
     var weight by remember { mutableStateOf("") }
     var rpe by remember { mutableStateOf("") }
+    var soreness by remember { mutableStateOf(SORENESS_OPTIONS.first()) }
 
     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -146,6 +162,53 @@ private fun ExerciseLogCard(
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 6.dp),
                 )
+            }
+
+            personalized?.personalized?.let {
+                val suggestion = when {
+                    it.suggestedWeightKg != null -> "${it.suggestedWeightKg}kg x ${it.suggestedReps}"
+                    it.suggestedReps != null -> "${it.suggestedReps} reps"
+                    else -> null
+                }
+                Text(
+                    "AI Coach: " + listOfNotNull(suggestion, it.rationale).joinToString(" — "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+            if (personalized != null && !personalized.aiAvailable) {
+                Text(
+                    "AI coaching isn't configured yet.",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+            aiError?.let {
+                Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp))
+            }
+
+            if (!isCompleted) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    SORENESS_OPTIONS.forEach { option ->
+                        FilterChip(
+                            selected = soreness == option,
+                            onClick = { soreness = option },
+                            label = { Text(option.replaceFirstChar { c -> c.uppercase() }) },
+                        )
+                    }
+                }
+                OutlinedButton(
+                    onClick = { onAskAiCoach(soreness, null) },
+                    enabled = !isAiLoading,
+                    modifier = Modifier.padding(top = 8.dp),
+                ) {
+                    if (isAiLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                    } else {
+                        Text("Ask AI Coach")
+                    }
+                }
             }
 
             logs.forEach { log ->

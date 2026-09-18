@@ -36,3 +36,50 @@ data class UserWorkoutDto(
 data class StartWorkoutResponse(
     val userWorkout: UserWorkoutDto,
 )
+
+data class UserWorkoutDetailDto(
+    val id: String,
+    @SerializedName("workout_id") val workoutId: String,
+    @SerializedName("assigned_date") val assignedDate: String,
+    @SerializedName("completed_date") val completedDate: String?,
+    val notes: String?,
+    @SerializedName("workout_name") val workoutName: String,
+)
+
+// weight_used_kg is a Postgres DECIMAL, serialized as a JSON string (e.g. "60.00") - see WorkoutModels precedent.
+data class ExerciseLogDto(
+    val id: String,
+    @SerializedName("exercise_id") val exerciseId: String,
+    @SerializedName("sets_completed") val setsCompleted: Int?,
+    @SerializedName("reps_per_set") val repsPerSet: List<Int>?,
+    @SerializedName("weight_used_kg") val weightUsedKg: String?,
+    @SerializedName("rest_taken_seconds") val restTakenSeconds: Int?,
+    val rpe: Int?,
+    val notes: String?,
+    @SerializedName("logged_at") val loggedAt: String,
+)
+
+data class StartedWorkoutResponse(
+    val userWorkout: UserWorkoutDetailDto,
+    val exercises: List<ExerciseDto>,
+    val logs: List<ExerciseLogDto>,
+)
+
+data class LogExerciseRequest(
+    @SerializedName("user_workout_id") val userWorkoutId: String,
+    @SerializedName("exercise_id") val exerciseId: String,
+    @SerializedName("sets_completed") val setsCompleted: Int,
+    @SerializedName("reps_per_set") val repsPerSet: List<Int>,
+    @SerializedName("weight_used_kg") val weightUsedKg: Double?,
+    @SerializedName("rest_taken_seconds") val restTakenSeconds: Int?,
+    val rpe: Int?,
+    val notes: String?,
+)
+
+data class LogExerciseResponse(
+    val log: ExerciseLogDto,
+)
+
+data class CompleteWorkoutResponse(
+    val userWorkout: UserWorkoutDetailDto,
+)

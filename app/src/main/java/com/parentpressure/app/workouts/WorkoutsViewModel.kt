@@ -16,7 +16,7 @@ data class WorkoutsUiState(
     val workouts: List<WorkoutDto> = emptyList(),
     val errorMessage: String? = null,
     val startingWorkoutId: String? = null,
-    val startedWorkoutIds: Set<String> = emptySet(),
+    val startedWorkouts: Map<String, String> = emptyMap(),
     val startError: String? = null,
 )
 
@@ -56,10 +56,11 @@ class WorkoutsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             try {
                 val response = workoutsApi.startWorkout(workoutId, "Bearer $token")
-                _uiState.value = if (response.isSuccessful) {
+                val body = response.body()
+                _uiState.value = if (response.isSuccessful && body != null) {
                     _uiState.value.copy(
                         startingWorkoutId = null,
-                        startedWorkoutIds = _uiState.value.startedWorkoutIds + workoutId,
+                        startedWorkouts = _uiState.value.startedWorkouts + (workoutId to body.userWorkout.id),
                     )
                 } else {
                     _uiState.value.copy(

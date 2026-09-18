@@ -5,12 +5,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.parentpressure.app.auth.AuthViewModel
 import com.parentpressure.app.auth.LoginScreen
 import com.parentpressure.app.auth.RegisterScreen
+import com.parentpressure.app.exerciselog.ExerciseLogScreen
+import com.parentpressure.app.exerciselog.ExerciseLogViewModel
 import com.parentpressure.app.home.HomeScreen
 import com.parentpressure.app.nutrition.NutritionScreen
 import com.parentpressure.app.nutrition.NutritionViewModel
@@ -26,6 +30,9 @@ private object Routes {
     const val WORKOUTS = "workouts"
     const val NUTRITION = "nutrition"
     const val SUBSCRIPTION = "subscription"
+    const val EXERCISE_LOG = "exercise_log/{userWorkoutId}"
+
+    fun exerciseLog(userWorkoutId: String) = "exercise_log/$userWorkoutId"
 }
 
 @Composable
@@ -79,7 +86,19 @@ fun AppNavHost() {
 
         composable(Routes.WORKOUTS) {
             val workoutsViewModel: WorkoutsViewModel = viewModel()
-            WorkoutsScreen(viewModel = workoutsViewModel)
+            WorkoutsScreen(
+                viewModel = workoutsViewModel,
+                onLogExercises = { userWorkoutId -> navController.navigate(Routes.exerciseLog(userWorkoutId)) },
+            )
+        }
+
+        composable(
+            Routes.EXERCISE_LOG,
+            arguments = listOf(navArgument("userWorkoutId") { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val userWorkoutId = backStackEntry.arguments?.getString("userWorkoutId") ?: return@composable
+            val exerciseLogViewModel: ExerciseLogViewModel = viewModel()
+            ExerciseLogScreen(userWorkoutId = userWorkoutId, viewModel = exerciseLogViewModel)
         }
 
         composable(Routes.NUTRITION) {

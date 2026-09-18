@@ -26,7 +26,7 @@ import com.parentpressure.app.network.ExerciseDto
 import com.parentpressure.app.network.WorkoutDto
 
 @Composable
-fun WorkoutsScreen(viewModel: WorkoutsViewModel) {
+fun WorkoutsScreen(viewModel: WorkoutsViewModel, onLogExercises: (userWorkoutId: String) -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) { viewModel.loadWorkouts() }
@@ -67,11 +67,13 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel) {
                     contentPadding = PaddingValues(16.dp),
                 ) {
                     items(uiState.workouts) { workout ->
+                        val userWorkoutId = uiState.startedWorkouts[workout.id]
                         WorkoutCard(
                             workout = workout,
                             isStarting = uiState.startingWorkoutId == workout.id,
-                            isStarted = uiState.startedWorkoutIds.contains(workout.id),
+                            userWorkoutId = userWorkoutId,
                             onStart = { viewModel.startWorkout(workout.id) },
+                            onLogExercises = { userWorkoutId?.let(onLogExercises) },
                         )
                     }
                 }
@@ -84,8 +86,9 @@ fun WorkoutsScreen(viewModel: WorkoutsViewModel) {
 private fun WorkoutCard(
     workout: WorkoutDto,
     isStarting: Boolean,
-    isStarted: Boolean,
+    userWorkoutId: String?,
     onStart: () -> Unit,
+    onLogExercises: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -99,15 +102,21 @@ private fun WorkoutCard(
                 modifier = Modifier.padding(top = 4.dp),
             )
 
-            Button(
-                onClick = onStart,
-                enabled = !isStarting && !isStarted,
-                modifier = Modifier.padding(top = 12.dp),
-            ) {
-                when {
-                    isStarting -> CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                    isStarted -> Text("Started ✓")
-                    else -> Text("Start Workout")
+            if (userWorkoutId != null) {
+                Button(onClick = onLogExercises, modifier = Modifier.padding(top = 12.dp)) {
+                    Text("Log Exercises")
+                }
+            } else {
+                Button(
+                    onClick = onStart,
+                    enabled = !isStarting,
+                    modifier = Modifier.padding(top = 12.dp),
+                ) {
+                    if (isStarting) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                    } else {
+                        Text("Start Workout")
+                    }
                 }
             }
 

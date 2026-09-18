@@ -1,0 +1,110 @@
+package com.parentpressure.app.exerciselog
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.parentpressure.app.auth.TokenStore
+import com.parentpressure.app.network.ApiClient
+import com.parentpressure.app.network.ExerciseDto
+import com.parentpressure.app.network.ExerciseLogDto
+import com.parentpressure.app.network.LogExerciseRequest
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+data class ExerciseLogUiState(
+    val isLoading: Boolean = false,
+    val workoutName: String = "",
+    val isCompleted: Boolean = false,
+    val exercises: List<ExerciseDto> = emptyList(),
+    val logsByExercise: Map<String, List<ExerciseLogDto>> = emptyMap(),
+    val errorMessage: String? = null,
+    val loggingExerciseId: String? = null,
+    val logError: String? = null,
+    val isCompleting: Boolean = false,
+)
+
+class ExerciseLogViewModel(application: Application) : AndroidViewModel(application) {
+    private val tokenStore = TokenStore(application)
+    private val workoutsApi = ApiClient.workoutsApi
+
+    private val _uiState = MutableStateFlow(ExerciseLogUiState())
+    val uiState: StateFlow<ExerciseLogUiState> = _uiState.asStateFlow()
+
+    private lateinit var userWorkoutId: String
+
+    fun load(userWorkoutId: String) {
+        this.userWorkoutId = userWorkoutId
+        val token = tokenStore.getToken() ?: return
+
+        _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+        viewModelScope.launch {
+            try {
+                val response = workoutsApi.getStartedWorkout(userWorkoutId, "Bearer $token")
+                val body = response.body()
+                _uiState.value = if (response.isSuccessful && body != null) {
+                    ExerciseLogUiState(
+                        workoutName = body.userWorkout.workoutName,
+                        isCompleted = body.userWorkout.completedDate != null,
+                        exercises = body.exercises,
+                        logsByExercise = body.logs.groupBy { it.exerciseId },
+                    )
+                } else {
+                    ExerciseLogUiState(errorMessage = "Failed to load workout (${response.code()})")
+                }
+            } catch (e: Exception) {
+                _uiState.value = ExerciseLogUiState(errorMessage = e.message ?: "Failed to load workout")
+            }
+        }
+    }
+
+    fun logSet(exerciseId: String, repsPerSet: List<Int>, weightKg: Double?, rpe: Int?) {
+        val token = tokenStore.getToken() ?: return
+
+        _uiState.value = _uiState.value.copy(loggingExerciseId = exerciseId, logError = null)
+        viewModelScope.launch {
+            try {
+                val request = LogExerciseRequest(
+                    userWorkoutId = userWorkoutId,
+                    exerciseId = exerciseId,
+                    setsCompleted = repsPerSet.size,
+                    repsPerSet = repsPerSet,
+                    weightUsedKg = weightKg,
+                    restTakenSeconds = null,
+                    rpe = rpe,
+                    notes = null,
+                )
+                val response = workoutsApi.logExercise(request, "Bearer $token")
+                val body = response.body()
+                _uiState.value = if (response.isSuccessful && body != null) {
+                    val updatedLogs = _uiState.value.logsByExercise.toMutableMap()
+                    updatedLogs[exerciseId] = (updatedLogs[exerciseId] ?: emptyList()) + body.log
+                    _uiState.value.copy(loggingExerciseId = null, logsByExercise = updatedLogs)
+                } else {
+                    _uiState.value.copy(loggingExerciseId = null, logError = "Failed to log set (${response.code()})")
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(loggingExerciseId = null, logError = e.message ?: "Failed to log set")
+            }
+        }
+    }
+
+    fun completeWorkout() {
+        val token = tokenStore.getToken() ?: return
+
+        _uiState.value = _uiState.value.copy(isCompleting = true, logError = null)
+        viewModelScope.launch {
+            try {
+                val response = workoutsApi.completeWorkout(userWorkoutId, "Bearer $token")
+                _uiState.value = if (response.isSuccessful) {
+                    _uiState.value.copy(isCompleting = false, isCompleted = true)
+                } else {
+                    _uiState.value.copy(isCompleting = false, logError = "Failed to complete workout (${response.code()})")
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isCompleting = false, logError = e.message ?: "Failed to complete workout")
+            }
+        }
+    }
+}

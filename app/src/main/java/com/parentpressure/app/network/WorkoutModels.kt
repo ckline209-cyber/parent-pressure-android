@@ -83,3 +83,16 @@ data class LogExerciseResponse(
 data class CompleteWorkoutResponse(
     val userWorkout: UserWorkoutDetailDto,
 )
+
+// last_weight_kg/suggested_weight_kg are computed server-side via JS Number arithmetic (not raw
+// DECIMAL columns), so unlike ExerciseLogDto.weightUsedKg these come back as real JSON numbers.
+data class ProgressionSuggestionDto(
+    @SerializedName("exercise_id") val exerciseId: String,
+    @SerializedName("has_history") val hasHistory: Boolean,
+    @SerializedName("last_weight_kg") val lastWeightKg: Double?,
+    @SerializedName("last_reps_per_set") val lastRepsPerSet: List<Int>?,
+    @SerializedName("last_rpe") val lastRpe: Int?,
+    @SerializedName("suggested_weight_kg") val suggestedWeightKg: Double?,
+    @SerializedName("suggested_reps") val suggestedReps: Int?,
+    val rationale: String,
+)

@@ -35,4 +35,10 @@ interface WorkoutsApi {
         @Path("id") userWorkoutId: String,
         @Header("Authorization") authorization: String,
     ): Response<CompleteWorkoutResponse>
+
+    @GET("workouts/exercises/{id}/progression")
+    suspend fun getProgression(
+        @Path("id") exerciseId: String,
+        @Header("Authorization") authorization: String,
+    ): Response<ProgressionSuggestionDto>
 }

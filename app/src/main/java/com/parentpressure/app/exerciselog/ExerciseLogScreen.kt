@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.parentpressure.app.network.ExerciseDto
 import com.parentpressure.app.network.ExerciseLogDto
+import com.parentpressure.app.network.ProgressionSuggestionDto
 
 @Composable
 fun ExerciseLogScreen(userWorkoutId: String, viewModel: ExerciseLogViewModel) {
@@ -82,6 +83,7 @@ fun ExerciseLogScreen(userWorkoutId: String, viewModel: ExerciseLogViewModel) {
                     ExerciseLogCard(
                         exercise = exercise,
                         logs = uiState.logsByExercise[exercise.id] ?: emptyList(),
+                        progression = uiState.progressionByExercise[exercise.id],
                         isLogging = uiState.loggingExerciseId == exercise.id,
                         isCompleted = uiState.isCompleted,
                         onLogSet = { repsPerSet, weightKg, rpe ->
@@ -114,6 +116,7 @@ fun ExerciseLogScreen(userWorkoutId: String, viewModel: ExerciseLogViewModel) {
 private fun ExerciseLogCard(
     exercise: ExerciseDto,
     logs: List<ExerciseLogDto>,
+    progression: ProgressionSuggestionDto?,
     isLogging: Boolean,
     isCompleted: Boolean,
     onLogSet: (repsPerSet: List<Int>, weightKg: Double?, rpe: Int?) -> Unit,
@@ -130,6 +133,20 @@ private fun ExerciseLogCard(
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 2.dp),
             )
+
+            progression?.let {
+                val suggestion = when {
+                    it.suggestedWeightKg != null -> "Suggested: ${it.suggestedWeightKg}kg x ${it.suggestedReps}"
+                    it.suggestedReps != null -> "Suggested: ${it.suggestedReps} reps"
+                    else -> null
+                }
+                Text(
+                    listOfNotNull(suggestion, it.rationale).joinToString(" — "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
 
             logs.forEach { log ->
                 Text(

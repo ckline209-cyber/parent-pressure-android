@@ -9,11 +9,14 @@ data class SubscriptionStatusDto(
     @SerializedName("subscription_end_date") val subscriptionEndDate: String?,
 )
 
-data class UpgradeRequest(
-    val plan: String,
-    @SerializedName("google_play_order_id") val googlePlayOrderId: String?,
+data class VerifyPurchaseRequest(
+    @SerializedName("purchaseToken") val purchaseToken: String,
 )
 
 data class SubscriptionResponse(
     val subscription: SubscriptionStatusDto,
+)
+
+data class CancelResponse(
+    val managementUrl: String,
 )

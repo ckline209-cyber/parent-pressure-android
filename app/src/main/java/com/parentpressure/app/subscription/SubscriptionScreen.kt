@@ -1,5 +1,8 @@
 package com.parentpressure.app.subscription
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,14 +21,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.parentpressure.app.network.SubscriptionStatusDto
 
 @Composable
 fun SubscriptionScreen(viewModel: SubscriptionViewModel) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val activity = context as? Activity
 
     LaunchedEffect(Unit) { viewModel.loadStatus() }
+
+    LaunchedEffect(uiState.managementUrl) {
+        uiState.managementUrl?.let { url ->
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            viewModel.managementUrlHandled()
+        }
+    }
 
     when {
         uiState.isLoading -> {
@@ -59,19 +72,19 @@ fun SubscriptionScreen(viewModel: SubscriptionViewModel) {
 
                 if (status?.subscriptionTier == "premium" && status.subscriptionActive) {
                     Button(
-                        onClick = { viewModel.cancel() },
+                        onClick = { viewModel.requestManagementUrl() },
                         enabled = !uiState.isSubmitting,
                         modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
                     ) {
                         if (uiState.isSubmitting) {
                             CircularProgressIndicator(modifier = Modifier.size(20.dp))
                         } else {
-                            Text("Cancel Subscription")
+                            Text("Manage Subscription")
                         }
                     }
-                } else {
+                } else if (activity != null) {
                     Button(
-                        onClick = { viewModel.upgrade("monthly") },
+                        onClick = { viewModel.upgrade(activity, "monthly") },
                         enabled = !uiState.isSubmitting,
                         modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
                     ) {
@@ -79,7 +92,7 @@ fun SubscriptionScreen(viewModel: SubscriptionViewModel) {
                     }
 
                     Button(
-                        onClick = { viewModel.upgrade("yearly") },
+                        onClick = { viewModel.upgrade(activity, "yearly") },
                         enabled = !uiState.isSubmitting,
                         modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                     ) {
